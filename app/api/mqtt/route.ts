@@ -10,6 +10,17 @@ export async function GET(request: Request) {
   const password = process.env.MQTT_PASSWORD;
   const topic = process.env.MQTT_TOPIC;
 
+  console.log("========== MQTT CONFIG ==========");
+  console.log("HOST:", host);
+  console.log("PORT:", port);
+  console.log("USERNAME:", username);
+  console.log(
+    "PASSWORD LENGTH:",
+    password?.length
+  );
+  console.log("TOPIC:", topic);
+  console.log("=================================");
+
   if (
     !host ||
     !port ||
@@ -49,7 +60,7 @@ export async function GET(request: Request) {
         } catch {}
       };
 
-      client.on("connect", () => {
+      client.on("connect", () => {  
         console.log(
           "MQTT Server Connected"
         );
