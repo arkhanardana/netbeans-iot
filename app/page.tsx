@@ -146,8 +146,8 @@ export default function Home() {
               />
             </div>
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-                Smart Home
+              <h1 className="text-4xl font-black tracking-tighter sm:text-5xl">
+                Smart Home Netbeans
               </h1>
               <p className="mt-1 text-base font-bold text-gray-700">Monitoring Realtime IOT</p>
             </div>
