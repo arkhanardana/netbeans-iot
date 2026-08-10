@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Warning,
   CloudRain,
@@ -11,7 +12,11 @@ import {
   BellRinging,
   Bell,
   CheckCircle,
+  SignOut,
+  UserCircle,
 } from "@phosphor-icons/react";
+import { createClient } from "./utils/supabase-client";
+import { type User } from "@supabase/supabase-js";
 
 interface SensorData {
   suhu: number | null;
@@ -24,6 +29,7 @@ interface SensorData {
 const GAS_THRESHOLD = 400;
 
 export default function Home() {
+  const router = useRouter();
   const [sensorData, setSensorData] = useState<SensorData>({
     suhu: null,
     gas: 0,
@@ -32,6 +38,7 @@ export default function Home() {
     servo: 0,
   });
 
+  const [user, setUser] = useState<User | null>(null);
   const [connected, setConnected] = useState(false);
   const [dismissedAlert, setDismissedAlert] = useState(false);
 
@@ -41,9 +48,7 @@ export default function Home() {
   useEffect(() => {
     const eventSource = new EventSource("/api/mqtt");
 
-    eventSource.onopen = () => {
-      console.log("SSE connection established");
-    };
+    eventSource.onopen = () => {};
 
     eventSource.onmessage = (event) => {
       try {
@@ -92,6 +97,25 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/admin");
+    router.refresh();
+  };
+
   return (
     <main className="min-h-screen bg-[#f8f9fa] px-6 py-10 text-black selection:bg-black selection:text-white">
       <div className="mx-auto max-w-5xl">
@@ -133,7 +157,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-5">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:h-20 sm:w-20">
               <Image
@@ -162,6 +186,44 @@ export default function Home() {
             </span>
           </div>
         </div>
+
+        {user ? (
+          <div className="mb-10 flex flex-col items-start justify-between gap-4 rounded-xl border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3">
+              <UserCircle size={40} weight="duotone" className="text-black" />
+              <div className="flex flex-col">
+                <span className="text-lg font-black tracking-tight">
+                  Halo, {user?.email ? user.email.split("@")[0] : "Admin"}!
+                </span>
+                {user?.email && (
+                  <span className="text-sm font-bold text-gray-500">Email: {user.email}</span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#ff6b6b] px-5 py-2.5 text-sm font-bold uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none sm:w-fit">
+              Keluar <SignOut size={18} weight="bold" />
+            </button>
+          </div>
+        ) : (
+          <div className="mb-10 flex flex-col items-start justify-between gap-4 rounded-xl border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3">
+              <UserCircle size={40} weight="duotone" className="text-black" />
+              <div className="flex flex-col">
+                <span className="text-lg font-black uppercase tracking-tight">Akses Admin</span>
+                <span className="text-sm font-bold text-gray-500">
+                  Silakan login untuk kelola sistem
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/admin")}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#4dabf7] px-5 py-2.5 text-sm font-bold uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none sm:w-fit">
+              Login sebagai Admin
+            </button>
+          </div>
+        )}
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
