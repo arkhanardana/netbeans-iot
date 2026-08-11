@@ -14,24 +14,29 @@ import {
   CheckCircle,
   SignOut,
   UserCircle,
+  Drop,
 } from "@phosphor-icons/react";
 import { createClient } from "./utils/supabase-client";
 import { type User } from "@supabase/supabase-js";
 
 interface SensorData {
-  suhu: number | null;
+  suhuUdara: number | null;
+  kelembaban: number | null;
+  suhuAir: number | null;
   gas: number;
   buzzer: boolean;
   hujan: boolean;
   servo: number;
 }
 
-const GAS_THRESHOLD = 400;
+const GAS_THRESHOLD = 500; // Disesuaikan dengan kode ESP8266 kamu
 
 export default function Home() {
   const router = useRouter();
   const [sensorData, setSensorData] = useState<SensorData>({
-    suhu: null,
+    suhuUdara: null,
+    kelembaban: null,
+    suhuAir: null,
     gas: 0,
     buzzer: false,
     hujan: false,
@@ -66,7 +71,9 @@ export default function Home() {
           const servoValue = Number(data.servo);
 
           setSensorData({
-            suhu: data.suhu !== null ? Number(data.suhu) : null,
+            suhuUdara: data.suhu_udara !== null ? Number(data.suhu_udara) : null,
+            kelembaban: data.kelembaban !== null ? Number(data.kelembaban) : null,
+            suhuAir: data.suhu_air !== null ? Number(data.suhu_air) : null,
             gas: gasValue,
             buzzer: buzzerStatus,
             hujan: hujanStatus,
@@ -225,7 +232,9 @@ export default function Home() {
           </div>
         )}
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Diubah menjadi 3 kolom agar 6 card terlihat simetris (2 baris x 3 kolom) */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {/* CARD SUHU RUANGAN (DHT11) */}
           <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div>
               <div className="mb-6 flex items-center justify-between">
@@ -233,12 +242,54 @@ export default function Home() {
                   <Thermometer size={24} weight="bold" />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                  Suhu
+                  Suhu Ruang
                 </span>
               </div>
               <div className="flex items-end gap-1">
                 <span className="text-5xl font-black tracking-tighter">
-                  {sensorData.suhu !== null ? sensorData.suhu.toFixed(1) : "--"}
+                  {sensorData.suhuUdara !== null ? sensorData.suhuUdara : "--"}
+                </span>
+                <span className="mb-1 text-xl font-bold">°C</span>
+              </div>
+            </div>
+            <p className="mt-4 text-xs font-bold text-gray-400">DHT11</p>
+          </div>
+
+          {/* CARD KELEMBABAN (DHT11) */}
+          <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-gray-100">
+                  <Drop size={24} weight="bold" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                  Kelembaban
+                </span>
+              </div>
+              <div className="flex items-end gap-1">
+                <span className="text-5xl font-black tracking-tighter">
+                  {sensorData.kelembaban !== null ? sensorData.kelembaban : "--"}
+                </span>
+                <span className="mb-1 text-xl font-bold">%</span>
+              </div>
+            </div>
+            <p className="mt-4 text-xs font-bold text-gray-400">DHT11</p>
+          </div>
+
+          {/* CARD SUHU AIR (DS18B20) */}
+          <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-gray-100">
+                  <Drop size={24} weight="bold" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                  Suhu Air
+                </span>
+              </div>
+              <div className="flex items-end gap-1">
+                <span className="text-5xl font-black tracking-tighter">
+                  {sensorData.suhuAir !== null ? sensorData.suhuAir : "--"}
                 </span>
                 <span className="mb-1 text-xl font-bold">°C</span>
               </div>
@@ -246,6 +297,7 @@ export default function Home() {
             <p className="mt-4 text-xs font-bold text-gray-400">DS18B20</p>
           </div>
 
+          {/* CARD GAS */}
           <div
             className={`flex flex-col justify-between rounded-2xl border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
               sensorData.gas >= GAS_THRESHOLD ? "bg-[#ff6b6b]" : "bg-white"
@@ -269,6 +321,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* CARD CUACA */}
           <div
             className={`flex flex-col justify-between rounded-2xl border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
               sensorData.hujan ? "bg-[#4dabf7]" : "bg-white"
@@ -302,6 +355,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* CARD BUZZER */}
           <div
             className={`flex flex-col justify-between rounded-2xl border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
               sensorData.buzzer ? "bg-[#ffc9c9]" : "bg-white"
