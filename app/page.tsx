@@ -193,18 +193,18 @@ export default function Home() {
 
         <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:h-20 sm:w-20">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:h-36 sm:w-36">
               <Image
                 src="/netbeans.png"
                 alt="Netbeans Logo"
-                width={80}
-                height={80}
-                className="h-full w-full object-cover"
+                width={150}
+                height={150}
+                className="h-fit w-fit object-contain"
                 priority
               />
             </div>
             <div>
-              <h1 className="text-4xl font-black tracking-tighter sm:text-5xl">
+              <h1 className="text-3xl font-black tracking-tighter sm:text-5xl">
                 Smart Home Netbeans
               </h1>
               <p className="mt-1 text-base font-bold text-gray-700">Monitoring Realtime IOT</p>
