@@ -329,7 +329,7 @@ export default function Home() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-gray-100">
                   <Thermometer size={24} weight="bold" />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                <span className="text-md font-bold uppercase tracking-widest text-gray-500">
                   Suhu Ruang
                 </span>
               </div>
@@ -350,7 +350,7 @@ export default function Home() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-gray-100">
                   <Drop size={24} weight="bold" />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                <span className="text-md font-bold uppercase tracking-widest text-gray-500">
                   Kelembapan
                 </span>
               </div>
@@ -371,7 +371,7 @@ export default function Home() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-gray-100">
                   <Thermometer size={24} weight="bold" />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                <span className="text-md font-bold uppercase tracking-widest text-gray-500">
                   Suhu Air
                 </span>
               </div>
@@ -395,7 +395,7 @@ export default function Home() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-white">
                   <Wind size={24} weight="bold" />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest opacity-70">Gas</span>
+                <span className="text-md font-bold uppercase tracking-widest opacity-70">Gas</span>
               </div>
               <div className="flex items-end gap-1">
                 <span className="text-5xl font-black tracking-tighter">{sensorData.gas}</span>
@@ -423,7 +423,7 @@ export default function Home() {
                     <Sun size={24} weight="bold" />
                   )}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest opacity-70">
+                <span className="text-md font-bold uppercase tracking-widest opacity-70">
                   Cuaca
                 </span>
               </div>
@@ -458,7 +458,7 @@ export default function Home() {
                     <Bell size={24} weight="bold" />
                   )}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest opacity-70">
+                <span className="text-md font-bold uppercase tracking-widest opacity-70">
                   Buzzer
                 </span>
               </div>
