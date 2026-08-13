@@ -29,7 +29,7 @@ interface SensorData {
   servo: number;
 }
 
-const GAS_THRESHOLD = 500; // Disesuaikan dengan kode ESP8266 kamu
+const GAS_THRESHOLD = 700;
 
 export default function Home() {
   const router = useRouter();
@@ -40,12 +40,14 @@ export default function Home() {
     gas: 0,
     buzzer: false,
     hujan: false,
-    servo: 0,
+    servo: 180,
   });
 
   const [user, setUser] = useState<User | null>(null);
   const [connected, setConnected] = useState(false);
   const [dismissedAlert, setDismissedAlert] = useState(false);
+
+  const [isToggling, setIsToggling] = useState(false);
 
   const isDanger = sensorData.buzzer || sensorData.gas >= GAS_THRESHOLD;
   const isRaining = sensorData.hujan;
@@ -123,6 +125,31 @@ export default function Home() {
     router.refresh();
   };
 
+  const handleToggleServo = async () => {
+    if (isRaining) return;
+
+    setIsToggling(true);
+    const targetServo = sensorData.servo === 0 ? 180 : 0;
+
+    try {
+      const res = await fetch("/api/mqtt/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: "iot/esp8266/cmd",
+          message: JSON.stringify({ command: "servo", value: targetServo }),
+        }),
+      });
+
+      if (!res.ok) throw new Error("Gagal mengirim perintah");
+    } catch (error) {
+      console.error(error);
+      alert("Gagal mengirim perintah ke alat.");
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#f8f9fa] px-6 py-10 text-black selection:bg-black selection:text-white">
       <div className="mx-auto max-w-5xl">
@@ -195,7 +222,7 @@ export default function Home() {
         </div>
 
         {user ? (
-          <div className="mb-10 flex flex-col items-start justify-between gap-4 rounded-xl border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:flex-row sm:items-center">
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-xl border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
               <UserCircle size={40} weight="duotone" className="text-black" />
               <div className="flex flex-col">
@@ -232,9 +259,70 @@ export default function Home() {
           </div>
         )}
 
-        {/* Diubah menjadi 3 kolom agar 6 card terlihat simetris (2 baris x 3 kolom) */}
+        {/* --- PANEL KONTROL ADMIN (TOGGLE SWITCH) --- */}
+        {user && (
+          <div className="mb-10 flex flex-col justify-center rounded-2xl border-4 border-black bg-gray-300 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h2 className="text-xl font-black uppercase tracking-tight">Panel Kontrol Manual</h2>
+            <p className="mt-1 text-sm font-bold text-gray-800">
+              Ambil alih kontrol sistem otomatis secara manual.
+            </p>
+
+            <div className="mt-4 flex flex-col justify-between gap-4 rounded-xl border-4 border-black bg-white p-5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:flex-row sm:items-center">
+              <div>
+                <h3 className="font-black text-lg uppercase tracking-tight">Jemuran</h3>
+                <p className="text-sm font-bold text-gray-500">
+                  {/* ===== LOGIKA DIBALIK ===== */}
+                  Status saat ini: {sensorData.servo === 180 ? "Terbuka (180°)" : "Tertutup (0°)"}
+                </p>
+                {isRaining && (
+                  <p className="mt-1 text-xs font-black text-[#ff6b6b] uppercase tracking-wider">
+                    *Dinonaktifkan karena sedang hujan
+                  </p>
+                )}
+              </div>
+
+              <div className="flex w-fit items-center gap-4">
+                {/* Teks Buka (Aktif saat servo 180) */}
+                <span
+                  className={`text-sm font-black uppercase tracking-widest transition-opacity ${
+                    sensorData.servo === 180 ? "text-black opacity-100" : "text-gray-400 opacity-50"
+                  }`}>
+                  Buka
+                </span>
+
+                {/* Tombol Switch Interaktif */}
+                <button
+                  onClick={handleToggleServo}
+                  disabled={isToggling || isRaining}
+                  className={`relative flex h-10 w-16 shrink-0 cursor-pointer items-center rounded-full border-4 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] outline-none transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    // ===== WARNA TOMBOL DIBALIK =====
+                    sensorData.servo === 180 ? "bg-[#51cf66]" : "bg-[#ff6b6b]"
+                  }`}>
+                  {/* Bulatan Knob (Kiri saat Buka, Kanan saat Tutup) */}
+                  <div
+                    className={`h-6 w-6 rounded-full border-4 border-black bg-white transition-transform duration-300 ease-in-out ${
+                      // ===== POSISI KNOB DIBALIK =====
+                      sensorData.servo === 180 ? "translate-x-0" : "translate-x-[24px]"
+                    }`}
+                  />
+                </button>
+
+                {/* Teks Tutup (Aktif saat servo 0) */}
+                <span
+                  className={`text-sm font-black uppercase tracking-widest transition-opacity ${
+                    sensorData.servo === 0 ? "text-black opacity-100" : "text-gray-400 opacity-50"
+                  }`}>
+                  Tutup
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* --------------------------------------------------- */}
+
+        {/* CARD SENSOR */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {/* CARD SUHU RUANGAN (DHT11) */}
+          {/* Suhu Ruang */}
           <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div>
               <div className="mb-6 flex items-center justify-between">
@@ -252,10 +340,10 @@ export default function Home() {
                 <span className="mb-1 text-xl font-bold">°C</span>
               </div>
             </div>
-            <p className="mt-4 text-xs font-bold text-gray-400">DHT11</p>
+            <p className="mt-4 text-xs font-bold text-gray-400">DHT 11</p>
           </div>
 
-          {/* CARD KELEMBABAN (DHT11) */}
+          {/* Kelembaban */}
           <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div>
               <div className="mb-6 flex items-center justify-between">
@@ -263,7 +351,7 @@ export default function Home() {
                   <Drop size={24} weight="bold" />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                  Kelembaban
+                  Kelembapan
                 </span>
               </div>
               <div className="flex items-end gap-1">
@@ -273,15 +361,15 @@ export default function Home() {
                 <span className="mb-1 text-xl font-bold">%</span>
               </div>
             </div>
-            <p className="mt-4 text-xs font-bold text-gray-400">DHT11</p>
+            <p className="mt-4 text-xs font-bold text-gray-400">DHT 11</p>
           </div>
 
-          {/* CARD SUHU AIR (DS18B20) */}
+          {/* Suhu Air */}
           <div className="flex flex-col justify-between rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
             <div>
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-gray-100">
-                  <Drop size={24} weight="bold" />
+                  <Thermometer size={24} weight="bold" />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
                   Suhu Air
@@ -297,7 +385,7 @@ export default function Home() {
             <p className="mt-4 text-xs font-bold text-gray-400">DS18B20</p>
           </div>
 
-          {/* CARD GAS */}
+          {/* Gas */}
           <div
             className={`flex flex-col justify-between rounded-2xl border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
               sensorData.gas >= GAS_THRESHOLD ? "bg-[#ff6b6b]" : "bg-white"
@@ -321,7 +409,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CARD CUACA */}
+          {/* Cuaca */}
           <div
             className={`flex flex-col justify-between rounded-2xl border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
               sensorData.hujan ? "bg-[#4dabf7]" : "bg-white"
@@ -349,13 +437,14 @@ export default function Home() {
               <span className="text-xs font-bold uppercase tracking-wider">
                 Servo: {sensorData.servo}°
               </span>
+              {/* ===== LOGIKA DIBALIK ===== */}
               <span className="text-xs font-bold opacity-60">
-                {sensorData.hujan ? "TERTUTUP" : "TERBUKA"}
+                {sensorData.servo === 180 ? "TERBUKA" : "TERTUTUP"}
               </span>
             </div>
           </div>
 
-          {/* CARD BUZZER */}
+          {/* Buzzer */}
           <div
             className={`flex flex-col justify-between rounded-2xl border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
               sensorData.buzzer ? "bg-[#ffc9c9]" : "bg-white"
